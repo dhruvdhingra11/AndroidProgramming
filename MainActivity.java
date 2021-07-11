@@ -1,208 +1,95 @@
-package com.example.calculator;
+package com.example.tictactoe;
 
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
+    boolean gameActive = true;
+    //Player Representation
+    //0-X
+    //1-o
 
-    //Declaring widgets
-    private EditText result;
-    private EditText newNumber;
-    private TextView displayOperation;
+    int activePlayer = 0;
+    int[] gameState = {2,2,2,2,2,2,2,2,2};
 
-    // Variables to hold the operands and type of calculations
-    private Double operand1 = null;
-    private String pendingOperation = "=";
+    //State Meanings
+    // 0 - X
+    //1-o
+    //2-null
 
-    private static final String STATE_PENDING_OPERATION = "PendingOperation";
-    private static final String STATE_OPERAND1 = "Operand1";
+    int winPositions[][] = {{0,1,2},{3,4,5},{6,7,8},
+                            {0,3,6},{1,4,7},{2,5,8},
+                             {0,4,8},{2,4,6}};
+
+    public void playerTap(View view){
+       ImageView img = (ImageView) view;
+       int tappedImg = Integer.parseInt(img.getTag().toString());
+       if(!gameActive){
+           gameReset(view);
+       }
+
+       if(gameState[tappedImg]==2) {
+           gameState[tappedImg] = activePlayer;
+           img.setTranslationY(-1000f);
+           if (activePlayer == 0) {
+               img.setImageResource(R.drawable.x);
+               activePlayer = 1;
+               TextView status = findViewById(R.id.status);
+               status.setText("O's Turn - Tap to play");
+           } else {
+               img.setImageResource(R.drawable.o);
+               activePlayer = 0;
+               TextView status = findViewById(R.id.status);
+               status.setText("X's Turn - Tap to play");
+           }
+           img.animate().translationYBy(1000f).setDuration(300);
+       }
+       //Check if  any player has won
+        for(int [] winPosition: winPositions){
+            if(gameState[winPosition[0]]==gameState[winPosition[1]]&&gameState[winPosition[1]]==gameState[winPosition[2]]&&gameState[winPosition[0]]!=2){
+                //Somebody has won, find out who?
+                String winnerStr;
+                gameActive =  false;
+                if(gameState[winPosition[0]]==0){
+                    winnerStr = "X has won";
+                }
+                else{
+                    winnerStr = "O has won";
+                }
+                //Update the status bar
+                TextView status = findViewById(R.id.status);
+                status.setText(winnerStr);
+            }
+        }
+    }
+    public void gameReset(View view){
+        gameActive = true;
+        activePlayer = 0;
+        for(int i = 0; i<gameState.length;i++){
+            gameState[i] = 2;
+        }
+        ((ImageView )findViewById(R.id.imageView2)).setImageResource(0);
+        ((ImageView)findViewById(R.id.imageView3)).setImageResource(0);
+        ((ImageView)findViewById(R.id.imageView4)).setImageResource(0);
+        ((ImageView)findViewById(R.id.imageView5)).setImageResource(0);
+        ((ImageView)findViewById(R.id.imageView6)).setImageResource(0);
+        ((ImageView)findViewById(R.id.imageView7)).setImageResource(0);
+        ((ImageView)findViewById(R.id.imageView8)).setImageResource(0);
+        ((ImageView)findViewById(R.id.imageView10)).setImageResource(0);
+        ((ImageView)findViewById(R.id.imageView11)).setImageResource(0);
+
+        TextView status = findViewById(R.id.status);
+        status.setText("X's Turn - Tap to play");
 
 
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        result = (EditText) findViewById(R.id.Result);
-        newNumber = (EditText) findViewById(R.id.newNumber);
-        displayOperation = (TextView) findViewById(R.id.operation);
-
-        Button button0 = (Button) findViewById(R.id.button0);
-        Button button1 = (Button) findViewById(R.id.button1);
-        Button button2 = (Button) findViewById(R.id.button2);
-        Button button3 = (Button) findViewById(R.id.button3);
-        Button button4 = (Button) findViewById(R.id.button4);
-        Button button5 = (Button) findViewById(R.id.button5);
-        Button button6 = (Button) findViewById(R.id.button6);
-        Button button7 = (Button) findViewById(R.id.button7);
-        Button button8 = (Button) findViewById(R.id.button8);
-        Button button9 = (Button) findViewById(R.id.button9);
-        Button buttonDot = (Button) findViewById(R.id.buttonDot);
-
-        Button buttonEquals = (Button) findViewById(R.id.buttonEquals);
-        Button buttonDivide = (Button) findViewById(R.id.buttonDivide);
-        Button buttonMultiply = (Button) findViewById(R.id.buttonMultiply);
-        Button buttonMinus = (Button) findViewById(R.id.buttonMinus);
-        Button buttonPlus = (Button) findViewById(R.id.buttonPlus);
-
-        View.OnClickListener listener = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-             Button b = (Button) view;
-             newNumber.append(b.getText().toString());
-            }
-        };
-
-        button0.setOnClickListener(listener);
-        button1.setOnClickListener(listener);
-        button2.setOnClickListener(listener);
-        button3.setOnClickListener(listener);
-        button4.setOnClickListener(listener);
-        button5.setOnClickListener(listener);
-        button6.setOnClickListener(listener);
-        button7.setOnClickListener(listener);
-        button8.setOnClickListener(listener);
-        button9.setOnClickListener(listener);
-        buttonDot.setOnClickListener(listener);
-
-
-        View.OnClickListener opListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Button b = (Button) view;
-                String op = b.getText().toString();
-                String value = newNumber.getText().toString();
-
-                // This is done to remove the . problem
-                try{
-                    Double doubleValue = Double.valueOf(value); //in this line we are adding a string variable in double variable called doubleValue
-                    performOperation(doubleValue, op);
-                } catch (NumberFormatException e){
-                    newNumber.setText("");
-                }
-
-                pendingOperation = op;
-                displayOperation.setText(pendingOperation);
-            }
-        };
-
-
-
-        buttonEquals.setOnClickListener(opListener);
-        buttonDivide.setOnClickListener(opListener);
-        buttonMultiply.setOnClickListener(opListener);
-        buttonMinus.setOnClickListener(opListener);
-        buttonPlus.setOnClickListener(opListener);
-
-
-        Button buttonNeg = (Button) findViewById(R.id.buttonNeg);
-
-        buttonNeg.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-
-                String value = newNumber.getText().toString();
-                if(value.length() == 0) {
-                    newNumber.setText("-");
-                } else {
-                    try {
-                        Double doubleValue = Double.valueOf(value);
-                        doubleValue *= -1;
-                        newNumber.setText(doubleValue.toString());
-                    } catch(NumberFormatException e) {
-                        // newNumber was "-" or ".", so clear it
-                        newNumber.setText("");
-                    }
-                }
-
-            }
-        });
-
-        Button buttonClr = (Button) findViewById(R.id.buttonClr);
-
-        buttonClr.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                newNumber.setText("");
-                result.setText("");
-                operand1 = null;
-                displayOperation.setText("");
-                pendingOperation = "=";
-            }
-        });
-
-        Button buttonDel = (Button) findViewById(R.id.buttonDel);
-
-        buttonDel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String value = newNumber.getText().toString();
-                if (value.length() != 0) {
-                    newNumber.setText(value.substring(0, value.length() - 1));
-                }
-            }
-        });
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putString(STATE_PENDING_OPERATION,pendingOperation);
-
-        if(operand1 != null) {
-            outState.putDouble(STATE_OPERAND1,operand1);
-        }
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        pendingOperation = savedInstanceState.getString(STATE_PENDING_OPERATION);
-        operand1 = savedInstanceState.getDouble(STATE_OPERAND1);
-        displayOperation.setText(pendingOperation);
-    }
-
-    private void performOperation(Double value, String operation) {
-        if (null == operand1) {
-            operand1 = value;
-        } else {
-            if (pendingOperation.equals("=")) {
-                pendingOperation = operation;
-            }
-
-            switch (pendingOperation){
-                case "=":
-                    operand1 = value;
-                    break;
-
-                case "/":
-                    if(value==0){
-                        operand1=0.0;
-                    }else{
-                        operand1 /= value;
-                    }
-                    break;
-
-                case "*":
-                    operand1 *= value;
-                    break;
-
-                case "-":
-                    operand1 -= value;
-                    break;
-
-                case "+":
-                    operand1 += value;
-                    break;
-            }
-        }
-        result.setText(operand1.toString());
-        newNumber.setText("");
     }
 }
